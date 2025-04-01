@@ -59,6 +59,23 @@ typedef struct
 } xinputh_device_t;
 static xinputh_device_t _xinputh_dev[CFG_TUH_DEVICE_MAX];
 
+#define XINPUT_DESC_TYPE_RESERVED 0x21
+
+typedef struct {
+    uint8_t bLength; // Length of this descriptor.
+    uint8_t bDescriptorType; // CONFIGURATION descriptor type (USB_DESCRIPTOR_CONFIGURATION).
+    uint8_t flags;
+    uint8_t reserved;
+    uint8_t subtype;
+    uint8_t reserved2;
+    uint8_t bEndpointAddressIn;
+    uint8_t bMaxDataSizeIn;
+    uint8_t reserved3[5];
+    uint8_t bEndpointAddressOut;
+    uint8_t bMaxDataSizeOut;
+    uint8_t reserved4[2];
+} __attribute__((packed)) XBOX_ID_DESCRIPTOR;
+
 //------------- Internal prototypes -------------//
 
 // Get HID device & interface
@@ -99,6 +116,29 @@ bool tuh_xinput_receive_report(uint8_t dev_addr, uint8_t instance) {
     return true;
 }
 
+bool tuh_xinput_receive_vendor_report(uint8_t dev_addr, uint8_t instance, uint8_t request, uint16_t value, uint8_t index, uint16_t length, uint8_t * recvBuf) {
+    const tusb_control_request_t xfer_ctrl_req = {
+            .bmRequestType_bit {
+                .recipient = TUSB_REQ_RCPT_INTERFACE,
+                .type = TUSB_REQ_TYPE_VENDOR,
+                .direction = TUSB_DIR_IN,
+            },
+            .bRequest = request,
+            .wValue = value,
+            .wIndex = TU_U16(index, 0x03),
+            .wLength = length
+    };
+    tuh_xfer_t xfer = {
+        .daddr       = dev_addr,
+        .ep_addr     = 0,
+        .setup       = &xfer_ctrl_req,
+        .buffer      = recvBuf,
+        .complete_cb = NULL,
+    };
+    return tuh_control_xfer(&xfer);
+}
+
+
 bool tuh_xinput_send_report(uint8_t dev_addr, uint8_t instance, uint8_t const *report, uint16_t len) {
     xinputh_interface_t *xid_itf = get_instance(dev_addr, instance);
 
@@ -123,6 +163,28 @@ bool tuh_xinput_send_report(uint8_t dev_addr, uint8_t instance, uint8_t const *r
     return ret;
 }
 
+bool tuh_xinput_send_vendor_report(uint8_t dev_addr, uint8_t instance, uint8_t request, uint16_t value, uint8_t index, uint16_t length, uint8_t * sendBuf) {
+    const tusb_control_request_t xfer_ctrl_req = {
+            .bmRequestType_bit {
+                .recipient = TUSB_REQ_RCPT_INTERFACE,
+                .type = TUSB_REQ_TYPE_VENDOR,
+                .direction = TUSB_DIR_OUT,
+            },
+            .bRequest = request,
+            .wValue = value,
+            .wIndex = TU_U16(index, 0x03),
+            .wLength = length
+    };
+    tuh_xfer_t xfer = {
+        .daddr       = dev_addr,
+        .ep_addr     = 0,
+        .setup       = &xfer_ctrl_req,
+        .buffer      = sendBuf,
+        .complete_cb = NULL,
+    };
+    return tuh_control_xfer(&xfer);
+}
+
 bool tuh_xinput_ready(uint8_t dev_addr, uint8_t instance) {
     TU_VERIFY(tuh_xinput_mounted(dev_addr, instance));
 
@@ -133,8 +195,9 @@ bool tuh_xinput_ready(uint8_t dev_addr, uint8_t instance) {
 //--------------------------------------------------------------------+
 // USBH API
 //--------------------------------------------------------------------+
-void xinputh_init(void) {
+bool xinputh_init(void) {
     tu_memclr(_xinputh_dev, sizeof(_xinputh_dev));
+    return true;
 }
 
 bool xinputh_xfer_cb(uint8_t dev_addr, uint8_t ep_addr, xfer_result_t result, uint32_t xferred_bytes) {
@@ -167,16 +230,6 @@ void xinputh_close(uint8_t dev_addr) {
     tu_memclr(hid_dev, sizeof(xinputh_device_t));
 }
 
-//--------------------------------------------------------------------+
-// Enumeration
-//--------------------------------------------------------------------+
-typedef enum
-{
-    UNKNOWN = 0,
-    XBOX360,
-    XBOXONE,
-} xinput_type_t;
-
 bool xinputh_open(uint8_t rhport, uint8_t dev_addr, tusb_desc_interface_t const *desc_itf, uint16_t max_len) {
     (void)rhport;
     (void)max_len;
@@ -191,7 +244,43 @@ bool xinputh_open(uint8_t rhport, uint8_t dev_addr, tusb_desc_interface_t const 
     }
     TU_VERIFY(p_xinput, 0);
     uint8_t const *p_desc = (uint8_t const *)desc_itf;
-    if (desc_itf->bInterfaceSubClass == 0x47 &&
+    // add instance for Xbox 360 dongle
+    if (desc_itf->bInterfaceSubClass == 0x5D &&
+        (desc_itf->bInterfaceProtocol == 0x01 ||
+         desc_itf->bInterfaceProtocol == 0x03 ||
+         desc_itf->bInterfaceProtocol == 0x02)) {
+
+        //-------------- Xinput Descriptor --------------//
+        p_desc = tu_desc_next(p_desc);
+        XBOX_ID_DESCRIPTOR *x_desc =
+            (XBOX_ID_DESCRIPTOR *)p_desc;
+
+        TU_ASSERT(XINPUT_DESC_TYPE_RESERVED == x_desc->bDescriptorType, 0);
+        //drv_len += x_desc->bLength;
+        uint8_t endpoints = desc_itf->bNumEndpoints;
+        while (endpoints--) {
+            p_desc = tu_desc_next(p_desc);
+            tusb_desc_endpoint_t const *desc_ep =
+                (tusb_desc_endpoint_t const *)p_desc;
+            TU_ASSERT(TUSB_DESC_ENDPOINT == desc_ep->bDescriptorType);
+            if (desc_ep->bEndpointAddress & 0x80) {
+                p_xinput->ep_in = desc_ep->bEndpointAddress;
+                TU_ASSERT(tuh_edpt_open(dev_addr, desc_ep));
+            } else {
+                p_xinput->ep_out = desc_ep->bEndpointAddress;
+                TU_ASSERT(tuh_edpt_open(dev_addr, desc_ep));
+            }
+        }
+        p_xinput->itf_num = desc_itf->bInterfaceNumber;
+        p_xinput->type = XBOX360;
+        if (desc_itf->bInterfaceProtocol == 0x01) {
+            p_xinput->subtype = x_desc->subtype;
+            usbh_edpt_xfer(dev_addr, p_xinput->ep_in, p_xinput->epin_buf, p_xinput->epin_size);
+        }
+        _xinputh_dev->inst_count++;
+        return true;
+    // Xbox One instance == 0x47 0xD0
+    } else if (desc_itf->bInterfaceSubClass == 0x47 &&
                desc_itf->bInterfaceProtocol == 0xD0 && desc_itf->bNumEndpoints) {
         uint8_t endpoints = desc_itf->bNumEndpoints;
         while (endpoints--) {

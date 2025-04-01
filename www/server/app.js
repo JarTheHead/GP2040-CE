@@ -17,6 +17,20 @@ const { pico: picoController } = JSON.parse(
 	readFileSync(path.resolve(__dirname, '../src/Data/Controllers.json'), 'utf8'),
 );
 
+// Structure pin mappings to include masks and profile label
+const createPinMappings = ({ profileLabel = 'Profile' }) => {
+	let pinMappings = { profileLabel, enabled: true };
+
+	for (const [key, value] of Object.entries(picoController)) {
+		pinMappings[key] = {
+			action: value,
+			customButtonMask: 0,
+			customDpadMask: 0,
+		};
+	}
+	return pinMappings;
+};
+
 const port = process.env.PORT || 8080;
 
 const app = express();
@@ -38,12 +52,11 @@ app.get('/api/resetSettings', (req, res) => {
 app.get('/api/getDisplayOptions', (req, res) => {
 	const data = {
 		enabled: 1,
-		i2cAddress: 61,
-		i2cBlock: 0,
 		flipDisplay: 0,
 		invertDisplay: 1,
 		buttonLayout: 0,
 		buttonLayoutRight: 3,
+		buttonLayoutOrientation: 0,
 		splashMode: 3,
 		splashChoice: 0,
 		splashDuration: 0,
@@ -65,7 +78,18 @@ app.get('/api/getDisplayOptions', (req, res) => {
 		},
 
 		displaySaverTimeout: 0,
+		displaySaverMode: 0,
 		turnOffWhenSuspended: 0,
+		inputMode: 1,
+		turboMode: 1,
+		dpadMode: 1,
+		socdMode: 1,
+		macroMode: 1,
+		profileMode: 0,
+		inputHistoryEnabled: 0,
+		inputHistoryLength: 21,
+		inputHistoryCol: 0,
+		inputHistoryRow: 7,
 	};
 	console.log('data', data);
 	return res.send(data);
@@ -90,7 +114,6 @@ app.get('/api/getGamepadOptions', (req, res) => {
 		fourWayMode: 0,
 		fnButtonPin: -1,
 		profileNumber: 1,
-		ps4ControllerType: 0,
 		debounceDelay: 5,
 		inputModeB1: 1,
 		inputModeB2: 0,
@@ -100,7 +123,18 @@ app.get('/api/getGamepadOptions', (req, res) => {
 		inputModeL2: -1,
 		inputModeR1: -1,
 		inputModeR2: 3,
-		ps4ReportHack: 0,
+		ps4AuthType: 0,
+		ps5AuthType: 0,
+		xinputAuthType: 0,
+		ps4ControllerIDMode: 0,
+		usbDescOverride: 0,
+		usbDescProduct: 'GP2040-CE (Custom)',
+		usbDescManufacturer: 'Open Stick Community',
+		usbDescVersion: '1.0',
+		usbOverrideID: 0,
+		usbVendorID: '10C4',
+		usbProductID: '82C0',
+		miniMenuGamepadInput: 1,
 		hotkey01: {
 			auxMask: 32768,
 			buttonsMask: 66304,
@@ -223,6 +257,9 @@ app.get('/api/getLedOptions', (req, res) => {
 		pledIndex3: 14,
 		pledIndex4: 15,
 		pledColor: 65280,
+		caseRGBType: 0,
+		caseRGBIndex: -1,
+		caseRGBCount: 0,
 		turnOffWhenSuspended: 0,
 	});
 });
@@ -253,7 +290,7 @@ app.get('/api/getCustomTheme', (req, res) => {
 });
 
 app.get('/api/getPinMappings', (req, res) => {
-	return res.send(picoController);
+	return res.send(createPinMappings({ profileLabel: 'Profile 1' }));
 });
 
 app.get('/api/getKeyMappings', (req, res) =>
@@ -373,7 +410,10 @@ app.get('/api/getWiiControls', (req, res) =>
 
 app.get('/api/getProfileOptions', (req, res) => {
 	return res.send({
-		alternativePinMappings: [picoController, picoController, picoController],
+		alternativePinMappings: [
+			createPinMappings({ profileLabel: 'Profile 2' }),
+			createPinMappings({ profileLabel: 'Profile 3' }),
+		],
 	});
 });
 
@@ -388,8 +428,6 @@ app.get('/api/getAddonsOptions', (req, res) => {
 		reverseActionDown: 1,
 		reverseActionLeft: 1,
 		reverseActionRight: 1,
-		i2cAnalog1219Block: 0,
-		i2cAnalog1219Address: 0x40,
 		onBoardLedMode: 0,
 		dualDirDpadMode: 0,
 		dualDirCombineMode: 0,
@@ -422,15 +460,25 @@ app.get('/api/getAddonsOptions', (req, res) => {
 		analogAdc2Mode: 2,
 		analogAdc2Invert: 0,
 		forced_circularity: 0,
-		analog_deadzone: 5,
+		inner_deadzone: 5,
+		outer_deadzone: 95,
 		auto_calibrate: 0,
+		analog_smoothing: 0,
+		smoothing_factor: 5,
+		analog_error: 1000,
 		bootselButtonMap: 0,
 		buzzerPin: -1,
+		buzzerEnablePin: -1,
 		buzzerVolume: 100,
+		drv8833RumbleLeftMotorPin: -1,
+		drv8833RumbleRightMotorPin: -1,
+		drv8833RumbleMotorSleepPin: -1,
+		drv8833RumblePWMFrequency: 10000,
+		drv8833RumbleDutyMin: 0,
+		drv8833RumbleDutyMax: 100,
 		focusModePin: -1,
 		focusModeButtonLockMask: 0,
 		focusModeButtonLockEnabled: 0,
-		playerNumber: 1,
 		shmupMode: 0,
 		shmupMixMode: 0,
 		shmupAlwaysOn1: 0,
@@ -446,12 +494,17 @@ app.get('/api/getAddonsOptions', (req, res) => {
 		shmupBtnMask3: 0,
 		shmupBtnMask4: 0,
 		pinShmupDial: -1,
+		turboLedType: 1,
+		turboLedIndex: 16,
+		turboLedColor: 16711680,
 		sliderSOCDModeDefault: 1,
-		wiiExtensionBlock: 0,
 		snesPadClockPin: -1,
 		snesPadLatchPin: -1,
 		snesPadDataPin: -1,
 		keyboardHostMap: DEFAULT_KEYBOARD_MAPPING,
+		keyboardHostMouseLeft: 0,
+		keyboardHostMouseMiddle: 0,
+		keyboardHostMouseRight: 0,
 		AnalogInputEnabled: 1,
 		BoardLedAddonEnabled: 1,
 		FocusModeAddonEnabled: 1,
@@ -461,28 +514,68 @@ app.get('/api/getAddonsOptions', (req, res) => {
 		DualDirectionalInputEnabled: 1,
 		TiltInputEnabled: 1,
 		I2CAnalog1219InputEnabled: 1,
-		JSliderInputEnabled: 1,
 		KeyboardHostAddonEnabled: 1,
 		PlayerNumAddonEnabled: 1,
-		PS4ModeAddonEnabled: 1,
 		ReverseInputEnabled: 1,
 		SliderSOCDInputEnabled: 1,
 		TurboInputEnabled: 1,
 		WiiExtensionAddonEnabled: 1,
 		SNESpadAddonEnabled: 1,
-		PSPassthroughAddonEnabled: 1,
-		XBOnePassthroughAddonEnabled: 1,
-		InputHistoryAddonEnabled: 1,
-		inputHistoryLength: 21,
-		inputHistoryCol: 0,
-		inputHistoryRow: 7,
 		Analog1256Enabled: 1,
 		analog1256Block: 0,
 		analog1256CsPin: -1,
 		analog1256DrdyPin: -1,
 		analog1256AnalogMax: 3.3,
 		analog1256EnableTriggers: false,
+		encoderOneEnabled: 0,
+		encoderOnePinA: -1,
+		encoderOnePinB: -1,
+		encoderOneMode: 0,
+		encoderOnePPR: 24,
+		encoderOneResetAfter: 0,
+		encoderOneAllowWrapAround: false,
+		encoderOneMultiplier: 1,
+		encoderTwoEnabled: 0,
+		encoderTwoPinA: -1,
+		encoderTwoPinB: -1,
+		encoderTwoMode: 0,
+		encoderTwoPPR: 24,
+		encoderTwoResetAfter: 0,
+		encoderTwoAllowWrapAround: false,
+		encoderTwoMultiplier: 1,
+		RotaryAddonEnabled: 1,
+		PCF8575AddonEnabled: 1,
+		DRV8833RumbleAddonEnabled: 1,
+		ReactiveLEDAddonEnabled: 1,
+		GamepadUSBHostAddonEnabled: 1,
 		usedPins: Object.values(picoController),
+	});
+});
+
+app.get('/api/getExpansionPins', (req, res) => {
+	return res.send({
+		pins: {
+			pcf8575: [
+				{
+					pin00: { option: 2, direction: 0 },
+					pin01: { option: -10, direction: 0 },
+					pin02: { option: -10, direction: 0 },
+					pin03: { option: -10, direction: 0 },
+					pin04: { option: -10, direction: 0 },
+					pin05: { option: -10, direction: 0 },
+					pin06: { option: -10, direction: 0 },
+					pin07: { option: -10, direction: 0 },
+					pin08: { option: -10, direction: 0 },
+					pin09: { option: -10, direction: 0 },
+					pin10: { option: -10, direction: 0 },
+					pin11: { option: -10, direction: 0 },
+					pin12: { option: -10, direction: 0 },
+					pin13: { option: -10, direction: 0 },
+					pin14: { option: -10, direction: 0 },
+					pin15: { option: -10, direction: 0 },
+				},
+			],
+		},
 	});
 });
 
@@ -496,7 +589,6 @@ app.get('/api/getMacroAddonOptions', (req, res) => {
 				showFrames: 1,
 				macroType: 1,
 				useMacroTriggerButton: 0,
-				macroTriggerPin: -1,
 				macroTriggerButton: 0,
 				macroLabel: 'Shoryuken',
 				macroInputs: [
@@ -509,10 +601,63 @@ app.get('/api/getMacroAddonOptions', (req, res) => {
 					},
 				],
 			},
+			{
+				enabled: 0,
+				exclusive: 1,
+				interruptible: 1,
+				showFrames: 1,
+				macroType: 1,
+				useMacroTriggerButton: 0,
+				macroTriggerButton: 0,
+				macroLabel: '',
+				macroInputs: [],
+			},
+			{
+				enabled: 0,
+				exclusive: 1,
+				interruptible: 1,
+				showFrames: 1,
+				macroType: 1,
+				useMacroTriggerButton: 0,
+				macroTriggerButton: 0,
+				macroLabel: '',
+				macroInputs: [],
+			},
+			{
+				enabled: 0,
+				exclusive: 1,
+				interruptible: 1,
+				showFrames: 1,
+				macroType: 1,
+				useMacroTriggerButton: 0,
+				macroTriggerButton: 0,
+				macroLabel: '',
+				macroInputs: [],
+			},
+			{
+				enabled: 0,
+				exclusive: 1,
+				interruptible: 1,
+				showFrames: 1,
+				macroType: 1,
+				useMacroTriggerButton: 0,
+				macroTriggerButton: 0,
+				macroLabel: '',
+				macroInputs: [],
+			},
+			{
+				enabled: 0,
+				exclusive: 1,
+				interruptible: 1,
+				showFrames: 1,
+				macroType: 1,
+				useMacroTriggerButton: 0,
+				macroTriggerButton: 0,
+				macroLabel: '',
+				macroInputs: [],
+			},
 		],
-		macroPin: -1,
 		macroBoardLedEnabled: 1,
-		InputMacroAddonEnabled: 1,
 	});
 });
 
@@ -544,17 +689,116 @@ app.get('/api/getButtonLayoutCustomOptions', (req, res) => {
 	});
 });
 
+app.get('/api/getButtonLayoutDefs', (req, res) => {
+	return res.send({
+		buttonLayout: {
+			BUTTON_LAYOUT_STICK: 0,
+			BUTTON_LAYOUT_STICKLESS: 1,
+			BUTTON_LAYOUT_BUTTONS_ANGLED: 2,
+			BUTTON_LAYOUT_BUTTONS_BASIC: 3,
+			BUTTON_LAYOUT_KEYBOARD_ANGLED: 4,
+			BUTTON_LAYOUT_KEYBOARDA: 5,
+			BUTTON_LAYOUT_DANCEPADA: 6,
+			BUTTON_LAYOUT_TWINSTICKA: 7,
+			BUTTON_LAYOUT_BLANKA: 8,
+			BUTTON_LAYOUT_VLXA: 9,
+			BUTTON_LAYOUT_FIGHTBOARD_STICK: 10,
+			BUTTON_LAYOUT_FIGHTBOARD_MIRRORED: 11,
+			BUTTON_LAYOUT_CUSTOMA: 12,
+			BUTTON_LAYOUT_OPENCORE0WASDA: 13,
+			BUTTON_LAYOUT_STICKLESS_13: 14,
+			BUTTON_LAYOUT_STICKLESS_16: 15,
+			BUTTON_LAYOUT_STICKLESS_14: 16,
+			BUTTON_LAYOUT_DANCEPAD_DDR_LEFT: 17,
+			BUTTON_LAYOUT_DANCEPAD_DDR_SOLO: 18,
+			BUTTON_LAYOUT_DANCEPAD_PIU_LEFT: 19,
+			BUTTON_LAYOUT_POPN_A: 20,
+			BUTTON_LAYOUT_TAIKO_A: 21,
+			BUTTON_LAYOUT_BM_TURNTABLE_A: 22,
+			BUTTON_LAYOUT_BM_5KEY_A: 23,
+			BUTTON_LAYOUT_BM_7KEY_A: 24,
+			BUTTON_LAYOUT_GITADORA_FRET_A: 25,
+			BUTTON_LAYOUT_GITADORA_STRUM_A: 26,
+			BUTTON_LAYOUT_BOARD_DEFINED_A: 27,
+			BUTTON_LAYOUT_BANDHERO_FRET_A: 28,
+			BUTTON_LAYOUT_BANDHERO_STRUM_A: 29,
+			BUTTON_LAYOUT_6GAWD_A: 30,
+			BUTTON_LAYOUT_6GAWD_ALLBUTTON_A: 31,
+			BUTTON_LAYOUT_6GAWD_ALLBUTTONPLUS_A: 32,
+			BUTTON_LAYOUT_STICKLESS_R16: 33,
+		},
+		buttonLayoutRight: {
+			BUTTON_LAYOUT_ARCADE: 0,
+			BUTTON_LAYOUT_STICKLESSB: 1,
+			BUTTON_LAYOUT_BUTTONS_ANGLEDB: 2,
+			BUTTON_LAYOUT_VEWLIX: 3,
+			BUTTON_LAYOUT_VEWLIX7: 4,
+			BUTTON_LAYOUT_CAPCOM: 5,
+			BUTTON_LAYOUT_CAPCOM6: 6,
+			BUTTON_LAYOUT_SEGA2P: 7,
+			BUTTON_LAYOUT_NOIR8: 8,
+			BUTTON_LAYOUT_KEYBOARDB: 9,
+			BUTTON_LAYOUT_DANCEPADB: 10,
+			BUTTON_LAYOUT_TWINSTICKB: 11,
+			BUTTON_LAYOUT_BLANKB: 12,
+			BUTTON_LAYOUT_VLXB: 13,
+			BUTTON_LAYOUT_FIGHTBOARD: 14,
+			BUTTON_LAYOUT_FIGHTBOARD_STICK_MIRRORED: 15,
+			BUTTON_LAYOUT_CUSTOMB: 16,
+			BUTTON_LAYOUT_KEYBOARD8B: 17,
+			BUTTON_LAYOUT_OPENCORE0WASDB: 18,
+			BUTTON_LAYOUT_STICKLESS_13B: 19,
+			BUTTON_LAYOUT_STICKLESS_16B: 20,
+			BUTTON_LAYOUT_STICKLESS_14B: 21,
+			BUTTON_LAYOUT_DANCEPAD_DDR_RIGHT: 22,
+			BUTTON_LAYOUT_DANCEPAD_PIU_RIGHT: 23,
+			BUTTON_LAYOUT_POPN_B: 24,
+			BUTTON_LAYOUT_TAIKO_B: 25,
+			BUTTON_LAYOUT_BM_TURNTABLE_B: 26,
+			BUTTON_LAYOUT_BM_5KEY_B: 27,
+			BUTTON_LAYOUT_BM_7KEY_B: 28,
+			BUTTON_LAYOUT_GITADORA_FRET_B: 29,
+			BUTTON_LAYOUT_GITADORA_STRUM_B: 30,
+			BUTTON_LAYOUT_BOARD_DEFINED_B: 31,
+			BUTTON_LAYOUT_BANDHERO_FRET_B: 32,
+			BUTTON_LAYOUT_BANDHERO_STRUM_B: 33,
+			BUTTON_LAYOUT_6GAWD_B: 34,
+			BUTTON_LAYOUT_6GAWD_ALLBUTTON_B: 35,
+			BUTTON_LAYOUT_6GAWD_ALLBUTTONPLUS_B: 36,
+			BUTTON_LAYOUT_STICKLESS_R16B: 37,
+		},
+	});
+});
+
+app.get('/api/getReactiveLEDs', (req, res) => {
+	return res.send({
+		leds: [
+			{ pin: -1, action: -10, modeDown: 0, modeUp: 1 },
+			{ pin: -1, action: -10, modeDown: 1, modeUp: 0 },
+			{ pin: -1, action: -10, modeDown: 1, modeUp: 0 },
+			{ pin: -1, action: -10, modeDown: 1, modeUp: 0 },
+			{ pin: -1, action: -10, modeDown: 1, modeUp: 0 },
+			{ pin: -1, action: -10, modeDown: 1, modeUp: 0 },
+			{ pin: -1, action: -10, modeDown: 1, modeUp: 0 },
+			{ pin: -1, action: -10, modeDown: 1, modeUp: 0 },
+			{ pin: -1, action: -10, modeDown: 1, modeUp: 0 },
+			{ pin: -1, action: -10, modeDown: 1, modeUp: 0 },
+		],
+	});
+});
+
 app.get('/api/reboot', (req, res) => {
 	return res.send({});
 });
 
 app.get('/api/getMemoryReport', (req, res) => {
 	return res.send({
-		totalFlash: 2048,
-		usedFlash: 1048,
+		totalFlash: 2048 * 1024,
+		usedFlash: 1048 * 1024,
+		physicalFlash: 2048 * 1024,
 		staticAllocs: 200,
-		totalHeap: 2048,
-		usedHeap: 1048,
+		totalHeap: 2048 * 1024,
+		usedHeap: 1048 * 1024,
 	});
 });
 

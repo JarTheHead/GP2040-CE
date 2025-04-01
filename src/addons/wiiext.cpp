@@ -6,14 +6,24 @@
 #include "config.pb.h"
 
 bool WiiExtensionInput::available() {
-    const DisplayOptions& displayOptions = Storage::getInstance().getDisplayOptions();
     const WiiOptions& options = Storage::getInstance().getAddonOptions().wiiOptions;
-    return (!displayOptions.enabled && options.enabled && PeripheralManager::getInstance().isI2CEnabled(options.i2cBlock));
+    if (options.enabled) {
+        // addon is enabled. let's scan available blocks.
+        wii = new WiiExtensionDevice();
+        PeripheralI2CScanResult result = PeripheralManager::getInstance().scanForI2CDevice(wii->getDeviceAddresses());
+        if (result.address > -1) {
+            wii->setAddress(result.address);
+            wii->setI2C(PeripheralManager::getInstance().getI2C(result.block));
+            return true;
+        } else {
+            delete wii;
+        }
+    }
+    return false;
 }
 
 void WiiExtensionInput::setup() {
     const WiiOptions& options = Storage::getInstance().getAddonOptions().wiiOptions;
-    PeripheralI2C* i2c = PeripheralManager::getInstance().getI2C(options.i2cBlock);
     nextTimer = getMillis();
 
 #if WII_EXTENSION_DEBUG==true
@@ -24,9 +34,9 @@ void WiiExtensionInput::setup() {
 
     currentConfig = NULL;
     
-    wii = new WiiExtension(
-        i2c,
-        WII_EXTENSION_I2C_ADDR);
+    //wii = new WiiExtensionDevice(
+    //    i2c,
+    //    WII_EXTENSION_I2C_ADDR);
     wii->begin();
     wii->start();
 
@@ -76,6 +86,8 @@ void WiiExtensionInput::process() {
         setButtonState(dpadLeft, WiiButtons::WII_BUTTON_LEFT);
         setButtonState(dpadRight, WiiButtons::WII_BUTTON_RIGHT);
 
+        updateMotionState();
+
         if (lastLeftX != leftX) lastLeftX = leftX;
         if (lastLeftY != leftY) lastLeftY = leftY;
         if (lastRightX != rightX) lastRightX = rightX;
@@ -97,7 +109,10 @@ uint16_t WiiExtensionInput::bounds(uint16_t x, uint16_t out_min, uint16_t out_ma
 
 void WiiExtensionInput::update() {
     if (wii->extensionType != WII_EXTENSION_NONE) {
-        uint16_t joystickMid = DriverManager::getInstance().getDriver()->GetJoystickMidValue();
+        uint16_t joystickMid = GAMEPAD_JOYSTICK_MID;
+        if ( DriverManager::getInstance().getDriver() != nullptr ) {
+            joystickMid = DriverManager::getInstance().getDriver()->GetJoystickMidValue();
+        }
         currentConfig = &extensionConfigs[wii->extensionType];
 
         //for (const auto& [extensionButton, value] : currentConfig->buttonMap) {
@@ -105,6 +120,8 @@ void WiiExtensionInput::update() {
         //}
 
         isAnalogTriggers = false;
+        isAccelerometer = false;
+        isGyroscope = false;
 
         if (wii->extensionType == WII_EXTENSION_NUNCHUCK) {
             buttonZ = wii->getController()->buttons[WiiButtons::WII_BUTTON_Z];
@@ -114,6 +131,11 @@ void WiiExtensionInput::update() {
             leftY = map(wii->getController()->analogState[WiiAnalogs::WII_ANALOG_LEFT_Y],WII_ANALOG_PRECISION_3,0,GAMEPAD_JOYSTICK_MIN,GAMEPAD_JOYSTICK_MAX);
             rightX = joystickMid;
             rightY = joystickMid;
+
+            accelerometerX = wii->getController()->motionState[WiiMotions::WII_ACCELEROMETER_X];
+            accelerometerY = wii->getController()->motionState[WiiMotions::WII_ACCELEROMETER_Y];
+            accelerometerZ = wii->getController()->motionState[WiiMotions::WII_ACCELEROMETER_Z];
+            isAccelerometer = true;
 
             triggerLeft = 0;
             triggerRight = 0;
@@ -155,7 +177,7 @@ void WiiExtensionInput::update() {
             buttonA = wii->getController()->buttons[GuitarButtons::GUITAR_RED];
             buttonX = wii->getController()->buttons[GuitarButtons::GUITAR_YELLOW];
             buttonY = wii->getController()->buttons[GuitarButtons::GUITAR_BLUE];
-            buttonL = wii->getController()->buttons[GuitarButtons::GUITAR_ORANGE];
+            buttonZL = wii->getController()->buttons[GuitarButtons::GUITAR_ORANGE];
 
             // whammy currently maps to Joy2X in addition to the raw whammy value
             whammyBar = wii->getController()->analogState[WiiAnalogs::WII_ANALOG_RIGHT_X];
@@ -168,6 +190,8 @@ void WiiExtensionInput::update() {
 
             triggerLeft = 0;
             triggerRight = 0;
+
+            isAnalogTriggers = true;
         } else if (wii->extensionType == WII_EXTENSION_TAIKO) {
             buttonL = wii->getController()->buttons[TaikoButtons::TATA_KAT_LEFT];
             buttonR = wii->getController()->buttons[TaikoButtons::TATA_KAT_RIGHT];
@@ -192,6 +216,8 @@ void WiiExtensionInput::update() {
 
             triggerLeft = 0;
             triggerRight = 0;
+
+            isAnalogTriggers = true;
         } else if (wii->extensionType == WII_EXTENSION_TURNTABLE) {
             buttonSelect = wii->getController()->buttons[WiiButtons::WII_BUTTON_MINUS];
             buttonStart = wii->getController()->buttons[WiiButtons::WII_BUTTON_PLUS];
@@ -215,6 +241,38 @@ void WiiExtensionInput::update() {
             triggerRight = wii->getController()->analogState[TurntableAnalogs::TURNTABLE_CROSSFADE];
 
             isAnalogTriggers = true;
+        } else if ((wii->extensionType == WII_EXTENSION_DRAWSOME) || (wii->extensionType == WII_EXTENSION_UDRAW)) {
+            buttonA = wii->getController()->buttons[WiiButtons::WII_BUTTON_A];
+            buttonL = wii->getController()->buttons[WiiButtons::WII_BUTTON_L];
+            buttonR = wii->getController()->buttons[WiiButtons::WII_BUTTON_R];
+
+            touchX = wii->getController()->motionState[WiiMotions::WII_TOUCH_X];
+            touchY = wii->getController()->motionState[WiiMotions::WII_TOUCH_Y];
+            touchZ = wii->getController()->motionState[WiiMotions::WII_TOUCH_Z];
+            touchPressed = wii->getController()->motionState[WiiMotions::WII_TOUCH_PRESSED];
+
+            isTouch = true;
+        } else if (wii->extensionType == WII_EXTENSION_MOTION_PLUS) {
+            currentConfig = &extensionConfigs[WII_EXTENSION_NUNCHUCK];
+            
+            gyroscopeX = wii->getController()->motionState[WiiMotions::WII_GYROSCOPE_YAW];
+            gyroscopeY = wii->getController()->motionState[WiiMotions::WII_GYROSCOPE_ROLL];
+            gyroscopeZ = wii->getController()->motionState[WiiMotions::WII_GYROSCOPE_PITCH];
+            isGyroscope = true;
+
+            // add logic to know if an attachment is detected. for now, just stream it.
+            buttonZ = wii->getController()->buttons[WiiButtons::WII_BUTTON_Z];
+            buttonC = wii->getController()->buttons[WiiButtons::WII_BUTTON_C];
+
+            leftX = map(wii->getController()->analogState[WiiAnalogs::WII_ANALOG_LEFT_X],0,WII_ANALOG_PRECISION_3,GAMEPAD_JOYSTICK_MIN,GAMEPAD_JOYSTICK_MAX);
+            leftY = map(wii->getController()->analogState[WiiAnalogs::WII_ANALOG_LEFT_Y],WII_ANALOG_PRECISION_3,0,GAMEPAD_JOYSTICK_MIN,GAMEPAD_JOYSTICK_MAX);
+            rightX = joystickMid;
+            rightY = joystickMid;
+
+            accelerometerX = wii->getController()->motionState[WiiMotions::WII_ACCELEROMETER_X];
+            accelerometerY = wii->getController()->motionState[WiiMotions::WII_ACCELEROMETER_Y];
+            accelerometerZ = wii->getController()->motionState[WiiMotions::WII_ACCELEROMETER_Z];
+            isAccelerometer = true;
         }
     } else {
         currentConfig = NULL;
@@ -336,7 +394,10 @@ void WiiExtensionInput::updateAnalogState() {
     Gamepad * gamepad = Storage::getInstance().GetGamepad();
     gamepad->hasAnalogTriggers = isAnalogTriggers;
 
-    uint16_t joystickMid = DriverManager::getInstance().getDriver()->GetJoystickMidValue();
+    uint16_t joystickMid = GAMEPAD_JOYSTICK_MID;
+    if ( DriverManager::getInstance().getDriver() != nullptr ) {
+        joystickMid = DriverManager::getInstance().getDriver()->GetJoystickMidValue();
+    }
 
     uint16_t axisType;
     uint16_t analogInput;
@@ -416,11 +477,11 @@ void WiiExtensionInput::updateAnalogState() {
                     break;
                 case WII_ANALOG_TYPE_LEFT_TRIGGER:
                     axisToChange = WII_ANALOG_TYPE_LEFT_TRIGGER;
-                    adjustedValue = bounds(analogValue,minValue,maxValue);
+                    adjustedValue = map(analogValue,minValue,maxValue,GAMEPAD_TRIGGER_MIN,GAMEPAD_TRIGGER_MAX);
                     break;
                 case WII_ANALOG_TYPE_RIGHT_TRIGGER:
                     axisToChange = WII_ANALOG_TYPE_RIGHT_TRIGGER;
-                    adjustedValue = bounds(analogValue,minValue,maxValue);
+                    adjustedValue = map(analogValue,minValue,maxValue,GAMEPAD_TRIGGER_MIN,GAMEPAD_TRIGGER_MAX);
                     break;
                 // advanced types
                 case WII_ANALOG_TYPE_LEFT_STICK_X_PLUS:
@@ -501,7 +562,35 @@ void WiiExtensionInput::updateAnalogState() {
                     gamepad->state.rt = getDelta(currAxis->second, GAMEPAD_TRIGGER_MID);
                     break;
             }
-        }       
+        }
+    }
+}
+
+void WiiExtensionInput::updateMotionState() {
+    Gamepad * gamepad = Storage::getInstance().GetGamepad();
+
+    gamepad->auxState.sensors.accelerometer.enabled = isAccelerometer;
+    if (isAccelerometer) {
+        gamepad->auxState.sensors.accelerometer.x = accelerometerX;
+        gamepad->auxState.sensors.accelerometer.y = accelerometerY;
+        gamepad->auxState.sensors.accelerometer.z = accelerometerZ;
+        gamepad->auxState.sensors.accelerometer.active = true;
+    }
+
+    gamepad->auxState.sensors.gyroscope.enabled = isGyroscope;
+    if (isGyroscope) {
+        gamepad->auxState.sensors.gyroscope.x = gyroscopeX;
+        gamepad->auxState.sensors.gyroscope.y = gyroscopeY;
+        gamepad->auxState.sensors.gyroscope.z = gyroscopeZ;
+        gamepad->auxState.sensors.gyroscope.active = true;
+    }
+
+    gamepad->auxState.sensors.touchpad[0].enabled = isTouch;
+    if (isTouch) {
+        gamepad->auxState.sensors.touchpad[0].x = touchX;
+        gamepad->auxState.sensors.touchpad[0].y = touchY;
+        gamepad->auxState.sensors.touchpad[0].z = touchZ;
+        gamepad->auxState.sensors.touchpad[0].active = touchPressed;
     }
 }
 

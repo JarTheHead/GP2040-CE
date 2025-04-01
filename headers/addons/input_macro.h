@@ -18,7 +18,7 @@
 #endif
 
 #ifndef INPUT_MACRO_BOARD_LED_ENABLED
-#define INPUT_MACRO_BOARD_LED_ENABLED 1
+#define INPUT_MACRO_BOARD_LED_ENABLED 0
 #endif
 
 #ifndef INPUT_MACRO_PIN
@@ -34,27 +34,32 @@
 
 class InputMacro : public GPAddon {
 public:
-	virtual bool available();   // GPAddon available
-	virtual void setup();       // Analog Setup
-	virtual void process() {};     // Analog Process
-	virtual void preprocess();
+    virtual bool available();   // GPAddon available
+    virtual void setup();       // Analog Setup
+    virtual void process() {};     // Analog Process
+    virtual void preprocess();
+    virtual void postprocess(bool sent) {}
+    virtual void reinit();
     virtual std::string name() { return InputMacroName; }
 private:
-	int macroPosition = -1;
-	bool isMacroRunning = false;
-	bool isMacroTriggerHeld = false;
-
-	uint64_t macroStartTime = 0;
-	uint64_t macroTriggerDebounceStartTime = 0;
-
-	int macroInputPosition = 0;
-	bool macroInputPressed = false;
-	uint32_t macroInputHoldTime = INPUT_HOLD_US;
-	bool prevMacroInputPressed = false;
-	bool boardLedEnabled = false;
-
-	MacroOptions inputMacroOptions;
-	void reset();
+    void checkMacroPress();
+    void checkMacroAction();
+    void runCurrentMacro();
+    void reset();
+    void restart(Macro& macro);
+    bool isMacroRunning;
+    bool isMacroTriggerHeld;
+    int macroPosition;
+    uint32_t macroButtonMask;
+    uint32_t macroPinMasks[6];
+    uint64_t macroStartTime;
+    uint64_t currentMicros;
+    int pressedMacro;
+    int macroInputPosition;
+    uint32_t macroInputHoldTime;
+    bool prevMacroInputPressed;
+    bool boardLedEnabled;
+    MacroOptions * inputMacroOptions;
 };
 
 #endif  // _InputMacro_H_

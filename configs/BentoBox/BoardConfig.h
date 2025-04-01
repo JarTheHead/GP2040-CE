@@ -7,6 +7,7 @@
 #define PICO_BOARD_CONFIG_H_
 
 #include "enums.pb.h"
+#include "class/hid/hid.h"
 
 #define BOARD_CONFIG_LABEL "BentoBox"
 
@@ -30,6 +31,12 @@
 #define GPIO_PIN_17 GpioAction::BUTTON_PRESS_R3     // R3     | RS     | RS      | R3       | 12     | RS     |
 #define GPIO_PIN_20 GpioAction::BUTTON_PRESS_A1     // A1     | Guide  | Home    | PS       | 13     | ~      |
 #define GPIO_PIN_19 GpioAction::BUTTON_PRESS_A2     // A2     | ~      | Capture | ~        | 14     | ~      |
+
+// Setting GPIO pins to assigned by add-on
+//
+#define GPIO_PIN_15 GpioAction::ASSIGNED_TO_ADDON
+#define GPIO_PIN_26 GpioAction::ASSIGNED_TO_ADDON
+#define GPIO_PIN_27 GpioAction::ASSIGNED_TO_ADDON
 
 // Keyboard Mapping Configuration
 //                                            // GP2040 | Xinput | Switch  | PS3/4/5  | Dinput | Arcade |
@@ -73,14 +80,40 @@
 #define LEDS_DPAD_UP     11
 
 #define HAS_I2C_DISPLAY 1
-#define I2C_SDA_PIN 26
-#define I2C_SCL_PIN 27
-#define I2C_BLOCK i2c1
-#define I2C_SPEED 800000
+#define I2C1_ENABLED 1
+#define I2C1_PIN_SDA 26
+#define I2C1_PIN_SCL 27
+#define DISPLAY_I2C_BLOCK i2c1
+#define I2C_SPEED 400000
 
-#define BUTTON_LAYOUT BUTTON_LAYOUT_STICKLESS
-#define BUTTON_LAYOUT_RIGHT BUTTON_LAYOUT_STICKLESSB
+#define BUTTON_LAYOUT BUTTON_LAYOUT_BOARD_DEFINED_A
+#define BUTTON_LAYOUT_RIGHT BUTTON_LAYOUT_BOARD_DEFINED_B
 #define SPLASH_MODE SPLASH_MODE_STATIC
+#define SPLASH_DURATION 3000
+
+#define DEFAULT_BOARD_LAYOUT_A {\
+  {GP_ELEMENT_PIN_BUTTON, {12, 25,  7,  7, 1, 1, 13,   GP_SHAPE_ELLIPSE}},\
+  {GP_ELEMENT_PIN_BUTTON, {28, 25,  7,  7, 1, 1, 12,   GP_SHAPE_ELLIPSE}},\
+  {GP_ELEMENT_PIN_BUTTON, {42, 32,  7,  7, 1, 1, 11,   GP_SHAPE_ELLIPSE}},\
+  {GP_ELEMENT_PIN_BUTTON, {47, 55,  7,  7, 1, 1, 2,    GP_SHAPE_ELLIPSE}},\
+  {GP_ELEMENT_PIN_BUTTON, {12, 12,  2,  2, 1, 1, 22,   GP_SHAPE_ELLIPSE}},\
+  {GP_ELEMENT_PIN_BUTTON, {19, 12,  2,  2, 1, 1, 21,   GP_SHAPE_ELLIPSE}},\
+  {GP_ELEMENT_PIN_BUTTON, {26, 12,  2,  2, 1, 1, 20,   GP_SHAPE_ELLIPSE}},\
+  {GP_ELEMENT_PIN_BUTTON, {33, 12,  2,  2, 1, 1, 19,   GP_SHAPE_ELLIPSE}},\
+  {GP_ELEMENT_PIN_BUTTON, {40, 12,  2,  2, 1, 1, 18,   GP_SHAPE_ELLIPSE}},\
+  {GP_ELEMENT_PIN_BUTTON, {47, 12, 2,  2, 1, 1, 17,    GP_SHAPE_ELLIPSE}}\
+}
+
+#define DEFAULT_BOARD_LAYOUT_B {\
+  {GP_ELEMENT_PIN_BUTTON, {56,  25, 7, 7, 1, 1, 10,    GP_SHAPE_ELLIPSE}},\
+  {GP_ELEMENT_PIN_BUTTON, {72,  22, 7, 7, 1, 1, 9,     GP_SHAPE_ELLIPSE}},\
+  {GP_ELEMENT_PIN_BUTTON, {88,  22, 7, 7, 1, 1, 8,     GP_SHAPE_ELLIPSE}},\
+  {GP_ELEMENT_PIN_BUTTON, {104, 25, 7, 7, 1, 1, 7,     GP_SHAPE_ELLIPSE}},\
+  {GP_ELEMENT_PIN_BUTTON, {56,  41, 7, 7, 1, 1, 3,     GP_SHAPE_ELLIPSE}},\
+  {GP_ELEMENT_PIN_BUTTON, {72,  38, 7, 7, 1, 1, 4,     GP_SHAPE_ELLIPSE}},\
+  {GP_ELEMENT_PIN_BUTTON, {88,  38, 7, 7, 1, 1, 5,     GP_SHAPE_ELLIPSE}},\
+  {GP_ELEMENT_PIN_BUTTON, {104, 41, 7, 7, 1, 1, 6,     GP_SHAPE_ELLIPSE}}\
+}
 
 #define DEFAULT_SPLASH \
   0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00, \

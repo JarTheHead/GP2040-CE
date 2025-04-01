@@ -47,6 +47,7 @@ uint8_t mode; // data/command mode for 9-bit SPI
 uint8_t iDCPin, iMOSIPin, iCLKPin, iCSPin;
 uint8_t iLEDPin; // backlight
 uint8_t bBitBang;
+uint8_t registerValue;
 } OBDISP;
 
 typedef char * (*SIMPLECALLBACK)(int iMenuItem);
@@ -397,6 +398,8 @@ int obdMenuDelta(SIMPLEMENU *sm, int iDelta);
 // returns -1 for normal interactions and the menu item index if the user presses the ENTER button
 //
 int obdMenuRun(SIMPLEMENU *sm);
+
+void obdSetFonts(const uint8_t *smallFont, const uint8_t *font, const uint8_t *bigFont);
 
 #if defined(_LINUX_) && defined(__cplusplus)
 }

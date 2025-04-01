@@ -1,4 +1,3 @@
-import React from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 
 import { AppContextProvider } from './Contexts/AppContext';
@@ -8,7 +7,6 @@ import Navigation from './Components/Navigation';
 import HomePage from './Pages/HomePage';
 import PinMappingPage from './Pages/PinMapping';
 import PeripheralMappingPage from './Pages/PeripheralMappingPage';
-import KeyboardMappingPage from './Pages/KeyboardMapping';
 import ResetSettingsPage from './Pages/ResetSettingsPage';
 import SettingsPage from './Pages/SettingsPage';
 import DisplayConfigPage from './Pages/DisplayConfig';
@@ -26,7 +24,7 @@ const App = () => {
 		<AppContextProvider>
 			<Router>
 				<Navigation />
-				<div className="container-fluid body-content">
+				<div className="body-content container-lg">
 					<Routes>
 						<Route path="/" element={<HomePage />} />
 						<Route path="/settings" element={<SettingsPage />} />
@@ -35,7 +33,6 @@ const App = () => {
 							path="/peripheral-mapping"
 							element={<PeripheralMappingPage />}
 						/>
-						<Route path="/keyboard-mapping" element={<KeyboardMappingPage />} />
 						<Route path="/reset-settings" element={<ResetSettingsPage />} />
 						<Route path="/led-config" element={<LEDConfigPage />} />
 						<Route path="/custom-theme" element={<CustomThemePage />} />

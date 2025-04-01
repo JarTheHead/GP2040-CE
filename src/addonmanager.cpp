@@ -1,52 +1,52 @@
 #include "addonmanager.h"
 #include "usbhostmanager.h"
 
-void AddonManager::LoadAddon(GPAddon* addon, ADDON_PROCESS processAt) {
+bool AddonManager::LoadAddon(GPAddon* addon) {
     if (addon->available()) {
         AddonBlock * block = new AddonBlock;
-		addon->setup();
+        addon->setup();
         block->ptr = addon;
-        block->process = processAt;
         addons.push_back(block);
-	} else {
-        delete addon; // Don't use the memory if we don't have to
+        return true;
+    } else {
+        delete addon; // Don't use the memory if we don't have to   
     }
+
+    return false;
 }
 
-void AddonManager::LoadUSBAddon(USBAddon* addon, ADDON_PROCESS processAt) {
-    if (addon->available()) {
-        AddonBlock * block = new AddonBlock;
-		addon->setup();
-        block->ptr = addon;
-        block->process = processAt;
-        addons.push_back(block);
-        USBHostManager::getInstance().pushAddon(addon);
-	} else {
-        delete addon; // Don't use the memory if we don't have to
-    }
+bool AddonManager::LoadUSBAddon(GPAddon* addon) {
+    bool ret = LoadAddon(addon);
+    if ( ret == true )
+        USBHostManager::getInstance().pushListener(addon->getListener());
+    return ret;
 }
 
-void AddonManager::ReinitializeAddons(ADDON_PROCESS processType) {
+void AddonManager::ReinitializeAddons() {
     // Loop through all addons and process any that match our type
     for (std::vector<AddonBlock*>::iterator it = addons.begin(); it != addons.end(); it++) {
-        if ( (*it)->process == processType )
-            (*it)->ptr->reinit();
+        (*it)->ptr->reinit();
     }
 }
 
-void AddonManager::PreprocessAddons(ADDON_PROCESS processType) {
+void AddonManager::PreprocessAddons() {
     // Loop through all addons and process any that match our type
     for (std::vector<AddonBlock*>::iterator it = addons.begin(); it != addons.end(); it++) {
-        if ( (*it)->process == processType )
-            (*it)->ptr->preprocess();
+        (*it)->ptr->preprocess();
     }
 }
 
-void AddonManager::ProcessAddons(ADDON_PROCESS processType) {
+void AddonManager::ProcessAddons() {
     // Loop through all addons and process any that match our type
     for (std::vector<AddonBlock*>::iterator it = addons.begin(); it != addons.end(); it++) {
-        if ( (*it)->process == processType )
-            (*it)->ptr->process();
+        (*it)->ptr->process();
+    }
+}
+
+void AddonManager::PostprocessAddons(bool reportSent) {
+    // Loop through all addons and process any that match our type
+    for (std::vector<AddonBlock*>::iterator it = addons.begin(); it != addons.end(); it++) {
+        (*it)->ptr->postprocess(reportSent);
     }
 }
 

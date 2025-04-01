@@ -28,17 +28,14 @@
 class SliderSOCDInput : public GPAddon {
 public:
     virtual bool available();
-	virtual void setup();       // SliderSOCD Button Setup
+    virtual void setup();       // SliderSOCD Button Setup
     virtual void reinit();
     virtual void preprocess() {}
-	virtual void process();     // SliderSOCD process
+    virtual void process();     // SliderSOCD process
+    virtual void postprocess(bool sent) {}
     virtual std::string name() { return SliderSOCDName; }
 private:
     SOCDMode read();
-    void debounce();
-    SOCDMode socdState;           // Saved locally for debounce
-    SOCDMode dDebState;          // Debounce SliderSOCD State
-    uint32_t uDebTime;          // Debounce SliderSOCD Time
 
     Mask_t upPrioModeMask = 0;
     Mask_t neutralModeMask = 0;

@@ -11,19 +11,24 @@
 // GP2040 Classes
 #include "gamepad.h"
 #include "addonmanager.h"
+#include "eventmanager.h"
 #include "gpdriver.h"
 
 #include "pico/types.h"
 
 class GP2040 {
 public:
-	GP2040();
-    ~GP2040();
+    GP2040(){}
+    ~GP2040(){}
     void setup();           // setup core0
     void run();             // loop core0
 private:
     Gamepad snapshot;
     AddonManager addons;
+    // GPIO debouncer
+    void debounceGpioGetAll();
+    Mask_t buttonGpios;
+    uint32_t gpioDebounceTime[NUM_BANK0_GPIOS];
 
     struct RebootHotkeys {
         RebootHotkeys();
@@ -42,11 +47,13 @@ private:
         NONE,
         ENTER_WEBCONFIG_MODE,
         ENTER_USB_MODE,
-        SET_INPUT_MODE_HID,
         SET_INPUT_MODE_SWITCH,
         SET_INPUT_MODE_XINPUT,
         SET_INPUT_MODE_KEYBOARD,
+        SET_INPUT_MODE_GENERIC,
+        SET_INPUT_MODE_PS3,
         SET_INPUT_MODE_PS4,
+        SET_INPUT_MODE_PS5,
         SET_INPUT_MODE_XBONE,
         SET_INPUT_MODE_NEOGEO,
         SET_INPUT_MODE_MDMINI,
@@ -63,8 +70,19 @@ private:
     void initializeStandardGpio();
     void deinitializeStandardGpio();
 
+    // event handling checking
+    void checkRawState(GamepadState prevState, GamepadState currState);
+    void checkProcessedState(GamepadState prevState, GamepadState currState);
+
     // input mask, action
     std::map<uint32_t, int32_t> bootActions;
+
+    bool saveRequested = false;
+    bool saveSuccessful = false;
+    void handleStorageSave(GPEvent* e);
+
+    bool rebootRequested = false;
+    void handleSystemReboot(GPEvent* e);
 };
 
 #endif

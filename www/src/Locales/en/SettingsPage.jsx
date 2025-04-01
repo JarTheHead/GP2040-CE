@@ -1,15 +1,20 @@
 export default {
-	'settings-header-text': 'Settings',
+	'auth-settings-label': 'Authentication Settings',
+	'no-mode-settings-text': 'There are no input mode settings for {{mode}}.',
+	'settings-header-text': 'Input Mode Settings',
+	'gamepad-settings-header-text': 'Gamepad Settings',
 	'input-mode-label': 'Input Mode',
+	'current-input-mode-label': 'Current Input Mode',
 	'input-mode-extra-label': 'Switch Touchpad and Share',
-	'ps4-report-hack': 'PS4 Report Speed Hack',
 	'input-mode-options': {
-        none: 'No Mode Selected',
+		none: 'No Mode Selected',
 		xinput: 'XInput',
 		'nintendo-switch': 'Nintendo Switch',
-		ps3: 'PS3/DirectInput',
+		ps3: 'PS3',
+		generic: 'Generic HID',
 		keyboard: 'Keyboard',
 		ps4: 'PS4',
+		ps5: 'PS5',
 		neogeo: 'NEOGEO mini',
 		mdmini: 'Sega Genesis/MegaDrive Mini',
 		pcemini: 'PC Engine/Turbografx 16 Mini',
@@ -17,16 +22,22 @@ export default {
 		astro: 'ASTROCITY Mini',
 		psclassic: 'Playstation Classic',
 		xboxoriginal: 'Original Xbox',
-    xbone: 'Xbox One'
+		xbone: 'Xbox One',
 	},
-    'input-mode-group': {
-        primary: 'Primary Input Modes',
-        mini: 'Mini/Classic Console Modes'
-    },
-    'boot-input-mode-label': 'Boot Input Modes',
+	'input-mode-group': {
+		primary: 'Primary Input Modes',
+		mini: 'Mini/Classic Console Modes',
+	},
+	'boot-input-mode-label': 'Boot Input Modes',
 	'ps4-mode-options': {
 		controller: 'Controller',
 		arcadestick: 'Arcade Stick',
+	},
+	'input-mode-authentication': {
+		none: 'None',
+		key: 'Uploaded Key Files',
+		usb: 'Host USB',
+		i2c: 'Attached I2C',
 	},
 	'd-pad-mode-label': 'D-Pad Mode',
 	'd-pad-mode-options': {
@@ -44,13 +55,35 @@ export default {
 		'first-win': 'First Win',
 		off: 'Off',
 	},
-	'profile-number-label': 'Profile Number',
+	'profile-label': 'Profile',
 	'debounce-delay-label': 'Debounce Delay in milliseconds',
-	'ps4-compatibility-label':
-		'For <strong>PS5 compatibility</strong>, use "Arcade Stick" and enable PS Passthrough add-on<br/>For <strong>PS4 support</strong>, use "Controller" and enable PS4 Mode add-on if you have the necessary files',
+	'mini-menu-gamepad-input': 'Use Gamepad Input for Display Mini Menu',
+	'ps4-mode-explanation-text':
+		'PS4 mode allows GP2040-CE to run as an authenticated PS4 controller.',
+	'ps4-mode-warning-text':
+		'<span>⏳ WARNING ⏳:</span> PS4 will timeout after 8 minutes without authentication.',
+	'ps4-usb-host-mode-text':
+		'<span>INFO:</span> Please ensure USB Peripheral is enabled and a PS4 compatible USB device is plugged in.',
+	'ps4-id-mode-label': 'Identification Mode',
+	'ps4-id-mode-explanation-text':
+		'<ul><li>Console mode is used when connecting primarily to a PS4 console.</li><li>Remote/Emulation mode should only be used when connecting to an emulation layer or remote playing environment that requires a DualShock 4-compatible controller.</li></ul>',
+	'ps4-id-mode-options': {
+		console: 'Console',
+		emulation: 'Remote/Emulation',
+	},
+	'ps5-mode-explanation-text':
+		'PS5 mode allows GP2040-CE to run as an authenticated PS5 compatible arcade stick.',
+	'ps5-mode-warning-text':
+		'<span>⏳ WARNING ⏳:</span> PS5 will timeout after 8 minutes without authentication.',
+	'ps5-usb-host-mode-text':
+		'<span>INFO:</span> Please ensure USB Peripheral is enabled and a PS5 compatible USB device is plugged in.',
+	'xbone-mode-text':
+		'<span>INFO:</span> Xbox One requires a USB host connection and USB dongle to properly authenticate in Xbox One mode.',
+	'xinput-mode-text':
+		'<span>INFO:</span> Xinput will work on a PC without any authentication.  If you would like to on a Xbox 360 please choose USB authentication and attach an appropriate dongle.',
 	'hotkey-settings-label': 'Hotkey Settings',
 	'hotkey-settings-sub-header':
-		"The <1>Fn</1> slider provides a mappable Function button in the <3 exact='true' to='/pin-mapping'>Pin Mapping</3> page. By selecting the <1>Fn</1> slider option, the Function button must be held along with the selected hotkey settings.<5 />Additionally, select <1>None</1> from the dropdown to unassign any button.",
+		'The <strong>Fn</strong> slider provides a mappable Function button in the <link_pinmap>Pin Mapping</link_pinmap> page. By selecting the <strong>Fn</strong> slider option, the Function button must be held along with the selected hotkey settings. <br /> Additionally, select <strong>None</strong> from the dropdown to unassign any button.',
 	'hotkey-settings-warning':
 		'Function button is not mapped. The Fn slider will be disabled.',
 	'hotkey-actions': {
@@ -83,12 +116,28 @@ export default {
 		's2-button': 'S2 Button',
 		'a1-button': 'A1 Button',
 		'a2-button': 'A2 Button',
+		'a3-button': 'A3 Button',
+		'a4-button': 'A4 Button',
+		'dpad-up': 'Dpad Up',
+		'dpad-down': 'Dpad Down',
+		'dpad-left': 'Dpad Left',
+		'dpad-right': 'Dpad Right',
 		'touchpad-button': 'Touchpad Button',
 		'load-profile-1': 'Load Profile #1',
 		'load-profile-2': 'Load Profile #2',
 		'load-profile-3': 'Load Profile #3',
 		'load-profile-4': 'Load Profile #4',
 		'reboot-default': 'Reboot GP2040-CE',
+		'save-config': 'Save Config',
+		'next-profile': 'Next Profile',
+		'previous-profile': 'Previous Profile',
+		'menu-nav-up': 'Menu Up',
+		'menu-nav-down': 'Menu Down',
+		'menu-nav-left': 'Menu Left',
+		'menu-nav-right': 'Menu Right',
+		'menu-nav-select': 'Menu Select',
+		'menu-nav-back': 'Menu Back',
+		'menu-nav-toggle': 'Menu Toggle',
 	},
 	'forced-setup-mode-label': 'Forced Setup Mode',
 	'forced-setup-mode-options': {
@@ -102,4 +151,18 @@ export default {
 		'If you reboot to Controller mode after saving, you will no longer have access to the web-config. Please type "<strong>{{warningCheckText}}</strong>" below to unlock the Save button if you fully acknowledge this and intend it. Clicking on Dismiss will revert this setting which then is to be saved.',
 	'4-way-joystick-mode-label': '4-Way Joystick Mode',
 	'lock-hotkeys-label': 'Lock Hotkeys',
+	'keyboard-mapping-header-text': 'Keyboard Mapping',
+	'keyboard-mapping-sub-header-text':
+		'Use the form below to reconfigure your button-to-key mapping.',
+	'usb-override': {
+		'advanced-override': '⚠️ Advanced USB Override',
+		'invalid-warning-danger':
+			'DANGER: Invalid USB parameters will cause your input modes to not function!',
+		'product-name': 'Product Name',
+		manufacturer: 'Manufacturer',
+		version: 'Version',
+		'physical-warning-danger': '⚡ Override Physical IDs ⚡ ',
+		'product-id': 'Product ID',
+		'vendor-id': 'Vendor ID',
+	},
 };

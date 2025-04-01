@@ -7,6 +7,7 @@
 #define PICO_BOARD_CONFIG_H_
 
 #include "enums.pb.h"
+#include "class/hid/hid.h"
 
 #define BOARD_CONFIG_LABEL "RP2040 Advanced Breakout Board - USB Passthrough"
 
@@ -31,6 +32,14 @@
 #define GPIO_PIN_14 GpioAction::BUTTON_PRESS_A1     // A1     | Guide  | Home    | PS       | 13     | ~      |
 #define GPIO_PIN_20 GpioAction::BUTTON_PRESS_A2     // A2     | ~      | Capture | ~        | 14     | ~      |
 
+// Setting GPIO pins to assigned by add-on
+//
+#define GPIO_PIN_00 GpioAction::ASSIGNED_TO_ADDON
+#define GPIO_PIN_01 GpioAction::ASSIGNED_TO_ADDON
+#define GPIO_PIN_04 GpioAction::ASSIGNED_TO_ADDON
+#define GPIO_PIN_23 GpioAction::ASSIGNED_TO_ADDON
+#define GPIO_PIN_24 GpioAction::ASSIGNED_TO_ADDON
+
 // Keyboard Mapping Configuration
 //                                            // GP2040 | Xinput | Switch  | PS3/4/5  | Dinput | Arcade |
 #define KEY_DPAD_UP     HID_KEY_ARROW_UP      // UP     | UP     | UP      | UP       | UP     | UP     |
@@ -53,10 +62,21 @@
 #define KEY_BUTTON_A2   HID_KEY_F2            // A2     | ~      | Capture | ~        | 14     | ~      |
 #define KEY_BUTTON_FN   -1                    // Hotkey Function                                        |
 
+#define USB_PERIPHERAL_ENABLED 1
+
+#define USB_PERIPHERAL_PIN_DPLUS 23
+#define USB_PERIPHERAL_PIN_ORDER 0
+
+#define DEFAULT_INPUT_MODE_R1 INPUT_MODE_XBONE
+#define DEFAULT_INPUT_MODE_B4 INPUT_MODE_PS5
+#define DEFAULT_PS5AUTHENTICATION_TYPE INPUT_MODE_AUTH_TYPE_USB
+
 #define BOARD_LEDS_PIN 4
-
-#define LED_BRIGHTNESS_MAXIMUM 50
-
+#define LED_BRIGHTNESS_MAXIMUM 100
+#define LED_BRIGHTNESS_STEPS 5
+#define LED_FORMAT LED_FORMAT_GRB
+#define LEDS_PER_PIXEL 1
+#define LEDS_BASE_ANIMATION_INDEX 1
 #define LEDS_DPAD_LEFT   0
 #define LEDS_DPAD_DOWN   1
 #define LEDS_DPAD_RIGHT  2
@@ -69,14 +89,21 @@
 #define LEDS_BUTTON_B2   9
 #define LEDS_BUTTON_R2   10
 #define LEDS_BUTTON_L2   11
+#define LEDS_BUTTON_A1   12
+#define LEDS_BUTTON_L3   13
+#define LEDS_BUTTON_R3   14
+#define LEDS_BUTTON_A2   15
 
 #define HAS_I2C_DISPLAY 1
-#define I2C_SDA_PIN 0
-#define I2C_SCL_PIN 1
+#define I2C0_ENABLED 1
+#define I2C0_PIN_SDA 0
+#define I2C0_PIN_SCL 1
+#define BUTTON_LAYOUT BUTTON_LAYOUT_STICKLESS
+#define BUTTON_LAYOUT_RIGHT BUTTON_LAYOUT_STICKLESSB
+#define SPLASH_MODE SPLASH_MODE_STATIC
+#define SPLASH_DURATION 3000
 
-#define PSPASSTHROUGH_ENABLED 1
-#define PSPASSTHROUGH_PIN_DPLUS 23
-
-#define XBONEPASSTHROUGH_ENABLED 1
+// Keyboard Host enabled by default
+#define KEYBOARD_HOST_ENABLED 1
 
 #endif

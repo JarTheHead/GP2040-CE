@@ -9,7 +9,7 @@ void PeripheralManager::initUSB(){
 void PeripheralManager::initI2C(){
     const PeripheralOptions& peripheralOptions = Storage::getInstance().getPeripheralOptions();
     if (peripheralOptions.blockI2C0.enabled) blockI2C0.setConfig(0, peripheralOptions.blockI2C0.sda, peripheralOptions.blockI2C0.scl, peripheralOptions.blockI2C0.speed);
-    if (peripheralOptions.blockI2C1.enabled) blockI2C1.setConfig(1, peripheralOptions.blockI2C1.sda, peripheralOptions.blockI2C1.scl, peripheralOptions.blockI2C1.speed);
+    if (peripheralOptions.blockI2C1.enabled) blockI2C1.setConfig(1, peripheralOptions.blockI2C1.sda, peripheralOptions.blockI2C1.scl, peripheralOptions.blockI2C1.speed); 
 }
 
 void PeripheralManager::initSPI(){
@@ -58,4 +58,30 @@ bool PeripheralManager::isUSBEnabled(uint8_t block) {
         return (((block == 0) ? blockUSB0.configured : false));
     }
     return false;
+}
+
+PeripheralI2CScanResult PeripheralManager::scanForI2CDevice(std::vector<uint8_t> addressList) {
+    PeripheralI2CScanResult scanResult = {
+        .address = -1,
+        .block = 0
+    };
+    
+    for (uint8_t block = 0; block < NUM_I2CS; block++) {
+        if (isI2CEnabled(block)) {
+            PeripheralI2C* i2c = getI2C(block);
+
+            for (uint8_t i = 0; i < addressList.size(); i++) {
+                if (!((addressList[i] & 0x78) == 0 || (addressList[i] & 0x78) == 0x78)) {
+                    uint8_t result = i2c->test(addressList[i]);
+
+                    if (result) {
+                        scanResult.address = addressList[i];
+                        scanResult.block = block;
+                        return scanResult;
+                    }
+                }
+            }
+        }
+    }
+    return scanResult;
 }

@@ -3,6 +3,8 @@
 #include "drivers/shared/driverhelper.h"
 #include "drivers/hid/HIDDescriptors.h"
 
+#include "eventmanager.h"
+
 void KeyboardDriver::initialize() {
 	keyboardReport = {
 		.keycode = { 0 },
@@ -20,6 +22,10 @@ void KeyboardDriver::initialize() {
 		.xfer_cb = hidd_xfer_cb,
 		.sof = NULL
 	};
+
+    // Handle Volume for Rotary Encoder
+    EventManager::getInstance().registerEventHandler(GP_EVENT_ENCODER_CHANGE, GPEVENT_CALLBACK(this->handleEncoder(event)));
+    volumeChange = 0; // no change
 }
 
 uint8_t KeyboardDriver::getModifier(uint8_t code) {
@@ -51,7 +57,7 @@ uint8_t KeyboardDriver::getMultimedia(uint8_t code) {
 }
 
 
-void KeyboardDriver::process(Gamepad * gamepad, uint8_t * outBuffer) {
+bool KeyboardDriver::process(Gamepad * gamepad) {
 	const KeyboardMapping& keyboardMapping = Storage::getInstance().getKeyboardMapping();
 	releaseAllKeys();
 	if(gamepad->pressedUp())     { pressKey(keyboardMapping.keyDpadUp); }
@@ -72,6 +78,26 @@ void KeyboardDriver::process(Gamepad * gamepad, uint8_t * outBuffer) {
 	if(gamepad->pressedR3()) 	{ pressKey(keyboardMapping.keyButtonR3); }
 	if(gamepad->pressedA1()) 	{ pressKey(keyboardMapping.keyButtonA1); }
 	if(gamepad->pressedA2()) 	{ pressKey(keyboardMapping.keyButtonA2); }
+	if(gamepad->pressedA3()) 	{ pressKey(keyboardMapping.keyButtonA3); }
+	if(gamepad->pressedA4()) 	{ pressKey(keyboardMapping.keyButtonA4); }
+	if(gamepad->pressedE1()) 	{ pressKey(keyboardMapping.keyButtonE1); }
+	if(gamepad->pressedE2()) 	{ pressKey(keyboardMapping.keyButtonE2); }
+	if(gamepad->pressedE3()) 	{ pressKey(keyboardMapping.keyButtonE3); }
+	if(gamepad->pressedE4()) 	{ pressKey(keyboardMapping.keyButtonE4); }
+	if(gamepad->pressedE5()) 	{ pressKey(keyboardMapping.keyButtonE5); }
+	if(gamepad->pressedE6()) 	{ pressKey(keyboardMapping.keyButtonE6); }
+	if(gamepad->pressedE7()) 	{ pressKey(keyboardMapping.keyButtonE7); }
+	if(gamepad->pressedE8()) 	{ pressKey(keyboardMapping.keyButtonE8); }
+	if(gamepad->pressedE9()) 	{ pressKey(keyboardMapping.keyButtonE9); }
+	if(gamepad->pressedE10()) 	{ pressKey(keyboardMapping.keyButtonE10); }
+	if(gamepad->pressedE11()) 	{ pressKey(keyboardMapping.keyButtonE11); }
+	if(gamepad->pressedE12()) 	{ pressKey(keyboardMapping.keyButtonE12); }
+
+    if( volumeChange > 0 ) {
+        pressKey(KEYBOARD_MULTIMEDIA_VOLUME_UP);
+    } else if ( volumeChange < 0 ) {
+        pressKey(KEYBOARD_MULTIMEDIA_VOLUME_DOWN);
+    }
 
 	// Wake up TinyUSB device
 	if (tud_suspended())
@@ -95,9 +121,19 @@ void KeyboardDriver::process(Gamepad * gamepad, uint8_t * outBuffer) {
 			if ( tud_hid_report(keyboardReport.reportId, keyboard_report_payload, keyboard_report_size) ) {
 				memcpy(last_report, keyboard_report_payload, keyboard_report_size);
 				last_report_size = keyboard_report_size;
+
+                // Adjust volume on success
+                if( volumeChange > 0 ) {
+                    volumeChange--;
+                } else if ( volumeChange < 0 ) {
+                    volumeChange++;
+                }
+				return true;
 			}
 		}
 	}
+	
+	return false;
 }
 
 void KeyboardDriver::pressKey(uint8_t code) {
@@ -159,4 +195,15 @@ const uint8_t * KeyboardDriver::get_descriptor_device_qualifier_cb() {
 
 uint16_t KeyboardDriver::GetJoystickMidValue() {
 	return HID_JOYSTICK_MID << 8;
+}
+
+void KeyboardDriver::handleEncoder(GPEvent* e) {
+    GPEncoderChangeEvent * encoderEvent = (GPEncoderChangeEvent*)e;
+    if ( encoderEvent->direction == 1 ) {
+        // volume up
+        volumeChange++;
+    } else if ( encoderEvent->direction == -1 ) {
+        // volume down
+        volumeChange--;
+    }
 }

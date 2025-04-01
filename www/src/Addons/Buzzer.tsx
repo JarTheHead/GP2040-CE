@@ -1,4 +1,3 @@
-import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { FormCheck, Row } from 'react-bootstrap';
 import * as yup from 'yup';
@@ -16,6 +15,10 @@ export const buzzerScheme = {
 		.number()
 		.label('Buzzer Pin')
 		.validatePinWhenValue('BuzzerSpeakerAddonEnabled'),
+	buzzerEnablePin: yup
+		.number()
+		.label('Buzzer Enable Pin')
+		.validatePinWhenValue('BuzzerSpeakerAddonEnabled'),
 	buzzerVolume: yup
 		.number()
 		.label('Buzzer Volume')
@@ -25,6 +28,7 @@ export const buzzerScheme = {
 export const buzzerState = {
 	BuzzerSpeakerAddonEnabled: 0,
 	buzzerPin: -1,
+	buzzerEnablePin: -1,
 	buzzerVolume: 100,
 };
 
@@ -46,6 +50,19 @@ const Buzzer = ({ values, errors, handleChange, handleCheckbox }) => {
 						value={values.buzzerPin}
 						error={errors.buzzerPin}
 						isInvalid={errors.buzzerPin}
+						onChange={handleChange}
+						min={-1}
+						max={29}
+					/>
+					<FormControl
+						type="number"
+						label={t('AddonsConfig:buzzer-speaker-enable-pin-label')}
+						name="buzzerEnablePin"
+						className="form-control-sm"
+						groupClassName="col-sm-3 mb-3"
+						value={values.buzzerEnablePin}
+						error={errors.buzzerEnablePin}
+						isInvalid={errors.buzzerEnablePin}
 						onChange={handleChange}
 						min={-1}
 						max={29}

@@ -1,4 +1,3 @@
-import React from 'react';
 import { useTranslation } from 'react-i18next';
 import * as yup from 'yup';
 
@@ -31,6 +30,7 @@ export const onBoardLedState = {
 
 const OnBoardLed = ({ values, errors, handleChange, handleCheckbox }) => {
 	const { t } = useTranslation();
+
 	return (
 		<Section title={t('AddonsConfig:on-board-led-configuration-label')}>
 			<div
@@ -49,7 +49,7 @@ const OnBoardLed = ({ values, errors, handleChange, handleCheckbox }) => {
 				>
 					{ON_BOARD_LED_MODES.map((o, i) => (
 						<option key={`onBoardLedMode-option-${i}`} value={o.value}>
-							{o.label}
+							{t(`AddonsConfig:on-board-led-mode-option-${i}`)}
 						</option>
 					))}
 				</FormSelect>

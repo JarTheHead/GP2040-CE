@@ -38,7 +38,9 @@ static const uint8_t * xbone_get_string_descriptor(int index) {
 		// Generate a serial number from the pico's unique ID
 		pico_unique_board_id_t id;
 		pico_get_unique_board_id(&id);
-		memcpy(uniqueSerial, (uint8_t*)&id, PICO_UNIQUE_BOARD_ID_SIZE_BYTES);
+        for(int i = 0; i < PICO_UNIQUE_BOARD_ID_SIZE_BYTES; i++) {
+            uniqueSerial[i] = 'A' + (id.id[i]%25); // some alphanumeric from 'A' to 'Z'
+        }
         return uniqueSerial;
 	} else if ( index == 4 ) { // security method used
 		return xboxSecurityMethod;
@@ -60,7 +62,7 @@ typedef enum
     GIP_AUTH                        = 0x06,    // Xbox One Authentication
     GIP_VIRTUAL_KEYCODE             = 0x07,    // XBox One Guide button pressed
     GIP_CMD_RUMBLE                  = 0x09,    // Xbox One Rumble Command
-    GIP_CMD_WAKEUP                  = 0x0A,    // Xbox One (Wake-up Maybe?)
+    GIP_CMD_LED_ON                  = 0x0A,    // Xbox One (LED On)
     GIP_FINAL_AUTH                  = 0x1E,    // Xbox One (Final auth?)
     GIP_INPUT_REPORT                = 0x20,    // Xbox One Input Report
     GIP_HID_REPORT                  = 0x21,    // Xbox One HID Report
@@ -108,6 +110,14 @@ typedef struct {
     uint8_t start : 1;  // menu
     uint8_t back : 1;   // view
 } __attribute__((packed)) XboxOneInputHeader_Data_t;
+
+typedef struct
+{
+    GipHeader_t Header;
+    uint8_t unk;
+    uint8_t mode;
+    uint8_t brightness;
+} __attribute__((packed)) XboxOneLED_Data_t;
 
 static const uint8_t xbone_device_qualifier[] =
 {
